@@ -1,12 +1,7 @@
 import os
 import numpy as np
 from scipy import io as sio
-from HW8Fun import produce_trun_mean_cov, plot_trunc_mean, plot_trunc_cov
-
-
-
-
-
+from self_py_fun.HW8Fun import produce_trun_mean_cov, plot_trunc_mean, plot_trunc_cov
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
 DATA_DIR = os.path.join(PROJECT_DIR, "data")
