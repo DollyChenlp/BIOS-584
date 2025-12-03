@@ -26,7 +26,7 @@ bp_low = 0.5
 bp_upp = 6
 electrode_num = 16
 # Change the following directory to your own one.
-parent_dir = '/Users/tma33/Library/CloudStorage/OneDrive-EmoryUniversity/Emory/Rollins SPH/2025/BIOS-584/python_proj'
+parent_dir = '/Users/lipingchen/Documents/GitHub/BIOS-584'
 parent_data_dir = '{}/data'.format(parent_dir)
 time_index = np.linspace(0, 800, 25)
 electrode_name_ls = ['F3', 'Fz', 'F4', 'T7', 'C3', 'Cz', 'C4', 'T8', 'CP3', 'CP4', 'P3', 'Pz', 'P4', 'PO7', 'PO8', 'Oz']
@@ -58,9 +58,15 @@ eeg_trn_type = np.squeeze(eeg_trn_type, axis=1)
 # you should be able to obtain relevant data files named
 # eeg_frt_signal and eeg_frt_type
 # Write your own code below:
-
-
-
+frt_data_name = '{}_001_BCI_FRT_Truncated_Data_{}_{}'.format(subject_name, bp_low, bp_upp)
+frt_data_dir = '{}/{}.mat'.format(parent_data_dir, frt_data_name)
+eeg_frt_obj = sio.loadmat(frt_data_dir)
+print(eeg_frt_obj.keys())
+eeg_frt_signal = eeg_frt_obj['Signal']
+print(eeg_frt_signal.shape)
+eeg_frt_type = eeg_frt_obj['Type']
+print(eeg_frt_type.shape)
+eeg_frt_type = np.squeeze(eeg_frt_type, axis=1)
 
 # You have completed the exploratory data analysis in HW7 and HW8.
 # The dataset has been carefully reviewed by Dr. Jane E. Huggins,
@@ -74,10 +80,39 @@ eeg_trn_type = np.squeeze(eeg_trn_type, axis=1)
 # You do not need to modify the parameters of each classifier
 # except for LogisticRegression: set max_iter=1000
 # Write your own code below:
+# Make sure labels are 1-D vectors
+eeg_trn_type = np.squeeze(eeg_trn_type)
+eeg_frt_type = np.squeeze(eeg_frt_type)
+from sklearn.linear_model import LogisticRegression
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
 
+X_train = eeg_trn_signal
+y_train = eeg_trn_type
+X_test  = eeg_frt_signal
+y_test  = eeg_frt_type
 
+log_clf = LogisticRegression(max_iter=5000)
+log_clf.fit(X_train, y_train)
+log_pred = log_clf.predict(X_test)
+log_acc = accuracy_score(y_test, log_pred)
+print("Logistic Regression accuracy:", log_acc)
 
-
+lda_clf = LinearDiscriminantAnalysis()
+lda_clf.fit(X_train, y_train)
+lda_pred = lda_clf.predict(X_test)
+lda_acc = accuracy_score(y_test, lda_pred)
+print("LDA accuracy:", lda_acc)
+svm_clf = SVC(probability=True)
+svm_clf.fit(X_train, y_train)
+svm_pred = svm_clf.predict(X_test)
+svm_acc = accuracy_score(y_test, svm_pred)
+print("SVM accuracy:", svm_acc)
+print("===== Model Performance Summary =====")
+print("Logistic Regression:", log_acc)
+print("LDA:", lda_acc)
+print("SVM:", svm_acc)
 
 # Step 3: Evaluate model performance on both TRN and FRT files
 # Step 3.1: Prediction accuracy on TRN files
@@ -86,24 +121,41 @@ eeg_trn_type = np.squeeze(eeg_trn_type, axis=1)
 # You are asked to generate stimulus-level probability for each method on TRN files,
 # denoted as logistic_y_trn, lda_y_trn, and svm_y_trn.
 # Write your own code below:
+logistic_y_trn = log_clf.predict_proba(X_train)[:, 1]
+lda_y_trn      = lda_clf.predict_proba(X_train)[:, 1]
+svm_y_trn      = svm_clf.predict_proba(X_train)[:, 1]
 
-
-
-
+print("logistic_y_trn shape:", logistic_y_trn.shape)
+print("lda_y_trn shape:", lda_y_trn.shape)
+print("svm_y_trn shape:", svm_y_trn.shape)
 
 # Step 3.2: Prediction accuracy on FRT files
 # Similarly, you are asked to generate stimulus-level probability for each method on FRT files,
 # denoted as logistic_y_frt, lda_y_frt, and svm_y_frt.
 # Write your own code below:
+frt_data_name = '{}_001_BCI_FRT_Truncated_Data_{}_{}.mat'.format(subject_name, bp_low, bp_upp)
+frt_data_dir = '{}/{}'.format(parent_data_dir, frt_data_name)
+eeg_frt_obj = sio.loadmat(frt_data_dir)
+print(eeg_frt_obj.keys())
 
+eeg_frt_signal = eeg_frt_obj['Signal']
+eeg_frt_type = np.squeeze(eeg_frt_obj['Type'])
 
-
+X_frt = eeg_frt_signal
+logistic_y_trn = log_clf.predict_proba(X_train)
+logistic_y_frt = log_clf.predict_proba(X_frt)
+lda_y_trn = lda_clf.predict_proba(X_train)
+lda_y_frt = lda_clf.predict_proba(X_frt)
+svm_y_trn = svm_clf.predict_proba(X_train)
+svm_y_frt = svm_clf.predict_proba(X_frt)
+print("logistic_y_frt shape:", logistic_y_frt.shape)
+print("lda_y_frt shape:", lda_y_frt.shape)
+print("svm_y_frt shape:", svm_y_frt.shape)
 
 
 # Step 4: Convert binary classification probability to character-level accuracy
 # This involves advanced data manipulation, so you do not need to write any new code.
 # Please run the following code to view the final results.
-'''
 eeg_trn_code = eeg_trn_obj['Code']
 eeg_frt_code = eeg_frt_obj['Code']
 char_frt = convert_raw_char_to_alphanumeric_stype(eeg_frt_obj['Text'])
@@ -176,7 +228,6 @@ print(svm_trn_accuracy)
 print(logistic_frt_accuracy)
 print(lda_frt_accuracy)
 print(svm_frt_accuracy)
-'''
 
 # Remember to answer two questions below:
 
@@ -184,11 +235,31 @@ print(svm_frt_accuracy)
 # In case that your row IDs are messed up when you start to fill in the blank,
 # I attach the lines of code for your reference.
 # logistic_trn_accuracy = np.mean(logistic_letter_mat_trn == np.array(list(char_trn))[:, np.newaxis], axis=0)
+# compare predicted TRAINING letters with the true training letters,
+# and compute the accuracy (proportion correct) for each training sequence.
+
 # logistic_frt_accuracy = np.mean(logistic_letter_mat_frt == np.array(list(char_frt))[:, np.newaxis], axis=0)
+# compare predicted TEST letters with the true test letters,
+# and compute the accuracy for each test sequence.
+
 # lda_trn_accuracy = np.mean(lda_letter_mat_trn == np.array(list(char_trn))[:, np.newaxis], axis=0)
+# compare predicted TRAINING letters with the true training letters,
+# and compute the accuracy for each training sequence.
+
 # lda_frt_accuracy = np.mean(lda_letter_mat_frt == np.array(list(char_frt))[:, np.newaxis], axis=0)
+# compare predicted TEST letters with the true test letters,
+# and compute the accuracy for each test sequence.
+
 # svm_trn_accuracy = np.mean(svm_letter_mat_trn == np.array(list(char_trn))[:, np.newaxis], axis=0)
+# compare predicted TRAINING letters with the true training letters,
+# and compute the accuracy for each training sequence.
+
 # svm_frt_accuracy = np.mean(svm_letter_mat_frt == np.array(list(char_frt))[:, np.newaxis], axis=0)
+# compare predicted TEST letters with the true test letters,
+# and compute the accuracy for each test sequence.
 
 # Step 5: Summary
 # Which method performs the best? Why?
+# LDA is the best method.
+# It has the highest accuracy, and it fits this dataset well because the classes
+# are mostly linearly separable.
