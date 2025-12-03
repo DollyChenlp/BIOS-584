@@ -263,3 +263,6 @@ print(svm_frt_accuracy)
 # LDA is the best method.
 # It has the highest accuracy, and it fits this dataset well because the classes
 # are mostly linearly separable.
+#[0.62962963 0.88888889 0.92592593 0.96296296] # logistic_frt_accuracy
+#[0.7037037  0.85185185 0.92592593 0.96296296] # lda_frt_accuracy
+#[0.62962963 0.88888889 0.92592593 1.        ] # svm_frt_accuracy
